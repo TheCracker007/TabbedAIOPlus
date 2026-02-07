@@ -1,10 +1,3 @@
-// Configuration - REPLACE WITH YOUR ACTUAL GOOGLE SHEET ID
-const GOOGLE_SHEET_ID = '1F9YWvXyWMAhTtlqp4hnu87dz1V2-ehQKJz-rCuYjjfg';
-const SHEET_NAME = 'Jobs';
-
-// Google Sheets JSON feed URL
-const SHEET_URL = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}`;
-
 let jobsData = [];
 let dataTable;
 
@@ -13,47 +6,31 @@ const sourceColors = {
     'CareerPower': 'primary',
     'AllGovtJobs': 'success',
     'AllGovtJobs-Filtered': 'info',
-    'SarkariResult': 'warning',
-    'Source5': 'secondary'
+    'SarkariResult': 'warning'
 };
 
-// Fetch data from Google Sheets
+// Fetch data from jobs.json
 async function fetchJobs() {
     try {
-        const response = await fetch(SHEET_URL);
-        const text = await response.text();
+        const response = await fetch('jobs.json');
+        const data = await response.json();
         
-        // Google Sheets returns JSONP, we need to extract the JSON
-        const json = JSON.parse(text.substring(47).slice(0, -2));
-        
-        // Parse the data
-        const rows = json.table.rows;
-        jobsData = rows.map(row => {
-            return {
-                source: row.c[0]?.v || 'N/A',
-                title: row.c[1]?.v || 'N/A',
-                posts: row.c[2]?.v || 'N/A',
-                qualification: row.c[3]?.v || 'N/A',
-                lastDate: row.c[4]?.v || 'N/A',
-                link: row.c[5]?.v || '',
-                scrapedAt: row.c[6]?.v || ''
-            };
-        });
+        jobsData = data.jobs;
         
         console.log('Fetched jobs:', jobsData.length);
-        return true;
+        return data;
     } catch (error) {
         console.error('Error fetching data:', error);
-        alert('Error loading jobs data. Please check the Google Sheet ID and make sure the sheet is publicly accessible.');
-        return false;
+        alert('Error loading jobs data. Please try again later.');
+        return null;
     }
 }
 
 // Initialize the page
 async function init() {
-    const success = await fetchJobs();
+    const data = await fetchJobs();
     
-    if (!success || jobsData.length === 0) {
+    if (!data || jobsData.length === 0) {
         document.getElementById('loading').innerHTML = '<p class="text-danger">Failed to load jobs. Please try again later.</p>';
         return;
     }
@@ -63,7 +40,7 @@ async function init() {
     document.getElementById('table-container').style.display = 'block';
     
     // Update stats
-    updateStats();
+    updateStats(data);
     
     // Populate filters
     populateFilters();
@@ -76,16 +53,16 @@ async function init() {
 }
 
 // Update statistics
-function updateStats() {
-    document.getElementById('total-jobs').textContent = jobsData.length;
+function updateStats(data) {
+    document.getElementById('total-jobs').textContent = data.totalJobs;
     
     // Get unique sources
     const uniqueSources = [...new Set(jobsData.map(job => job.source))];
     document.getElementById('total-sources').textContent = uniqueSources.length;
     
     // Get last update time
-    if (jobsData.length > 0 && jobsData[0].scrapedAt) {
-        const lastUpdate = new Date(jobsData[0].scrapedAt);
+    if (data.lastUpdated) {
+        const lastUpdate = new Date(data.lastUpdated);
         const timeAgo = getTimeAgo(lastUpdate);
         document.getElementById('last-update').textContent = timeAgo;
         document.getElementById('footer-update').textContent = `Last updated: ${lastUpdate.toLocaleString()}`;
@@ -211,10 +188,7 @@ document.addEventListener('DOMContentLoaded', init);
 
 ---
 
-## 4. requirements.txt
+## **4. requirements.txt** (Updated - No Google packages)
 ```
 beautifulsoup4==4.12.3
 requests==2.31.0
-pandas==2.2.0
-gspread==6.0.0
-google-auth==2.27.0
