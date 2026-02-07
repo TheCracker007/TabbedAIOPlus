@@ -184,11 +184,3 @@ function setupEventListeners() {
 
 // Start the application
 document.addEventListener('DOMContentLoaded', init);
-```
-
----
-
-## **4. requirements.txt** (Updated - No Google packages)
-```
-beautifulsoup4==4.12.3
-requests==2.31.0
