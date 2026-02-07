@@ -11,6 +11,9 @@
     <!-- DataTables CSS -->
     <link href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css" rel="stylesheet">
     
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
     <style>
         body {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -26,10 +29,63 @@
             margin-top: 20px;
         }
         
+        .header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
         h1 {
             color: #667eea;
             font-weight: 700;
-            margin-bottom: 10px;
+            margin: 0;
+        }
+        
+        .refresh-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+        
+        .refresh-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .refresh-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .refresh-btn i {
+            font-size: 1.1rem;
+        }
+        
+        .refresh-btn.spinning i {
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .refresh-info {
+            font-size: 0.75rem;
+            opacity: 0.8;
+            margin-top: 5px;
+            text-align: right;
         }
         
         .subtitle {
@@ -109,12 +165,103 @@
             width: 3rem;
             height: 3rem;
         }
+        
+        .alert-custom {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            min-width: 300px;
+            animation: slideIn 0.3s ease-out;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        .modal-content {
+            border-radius: 15px;
+        }
+        
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px 15px 0 0;
+        }
+        
+        .progress-container {
+            margin: 20px 0;
+        }
+        
+        @media (max-width: 768px) {
+            .header-section {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            
+            .refresh-btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
     </style>
 </head>
 <body>
+    <!-- Alert Container -->
+    <div id="alert-container"></div>
+    
+    <!-- Progress Modal -->
+    <div class="modal fade" id="progressModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-arrow-clockwise me-2"></i>
+                        Refreshing Jobs Data
+                    </h5>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center mb-3">
+                        <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                    <p class="text-center mb-3" id="progress-message">Triggering scraper workflow...</p>
+                    <div class="progress-container">
+                        <div class="progress">
+                            <div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" 
+                                 style="width: 0%"></div>
+                        </div>
+                        <small class="text-muted d-block mt-2 text-center">This usually takes 1-2 minutes</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <div class="container">
-        <h1>🏛️ Government Jobs Portal</h1>
-        <p class="subtitle">Latest government job opportunities from multiple sources</p>
+        <div class="header-section">
+            <div>
+                <h1>🏛️ Government Jobs Portal</h1>
+                <p class="subtitle">Latest government job opportunities from multiple sources</p>
+            </div>
+            <div>
+                <button id="refresh-btn" class="refresh-btn" onclick="smartRefresh()">
+                    <i class="bi bi-arrow-clockwise"></i>
+                    <span id="refresh-text">Refresh Jobs</span>
+                </button>
+                <div class="refresh-info" id="refresh-info"></div>
+            </div>
+        </div>
         
         <!-- Stats -->
         <div class="row" id="stats-section">
