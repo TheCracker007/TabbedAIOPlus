@@ -1,39 +1,12 @@
 """
 Government Job Scraper - Combines all 4 sources
-Scrapes job listings and writes to Google Sheets
+Scrapes job listings and saves to jobs.json
 """
 
 import requests
 from bs4 import BeautifulSoup
-import pandas as pd
-from datetime import datetime, timedelta
-import gspread
-from google.oauth2.service_account import Credentials
 import json
-import os
-
-# Google Sheets setup
-SCOPES = ['https://www.googleapis.com/auth/spreadsheets', 
-          'https://www.googleapis.com/auth/drive']
-
-def get_google_sheet():
-    """Authenticate and get Google Sheet"""
-    # Load credentials from environment variable (set in GitHub Secrets)
-    creds_json = os.environ.get('GOOGLE_CREDENTIALS')
-    if not creds_json:
-        raise ValueError("GOOGLE_CREDENTIALS environment variable not set")
-    
-    creds_dict = json.loads(creds_json)
-    creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
-    client = gspread.authorize(creds)
-    
-    # Open the sheet (you'll need to create this and share it with the service account)
-    sheet_id = os.environ.get('GOOGLE_SHEET_ID')
-    if not sheet_id:
-        raise ValueError("GOOGLE_SHEET_ID environment variable not set")
-    
-    return client.open_by_key(sheet_id)
-
+from datetime import datetime, timedelta
 
 def scrape_source1():
     """Source 1: careerpower.in - WITHOUT ScrapingAnt (direct scraping)"""
@@ -68,12 +41,12 @@ def scrape_source1():
                         posts = "N/A"
                     
                     data.append({
-                        'Source': 'CareerPower',
-                        'Title': title,
-                        'Posts': posts,
-                        'Qualification': 'N/A',
-                        'Last Date': last_date,
-                        'Link': link
+                        'source': 'CareerPower',
+                        'title': title,
+                        'posts': posts,
+                        'qualification': 'N/A',
+                        'lastDate': last_date,
+                        'link': link
                     })
         
         print(f"Source 1: Found {len(data)} jobs")
@@ -115,12 +88,12 @@ def scrape_source2():
                     posts_info = job_details.split('-')[-1].strip() if '-' in job_details else job_details
                     
                     all_data.append({
-                        'Source': 'AllGovtJobs',
-                        'Title': org,
-                        'Posts': posts_info,
-                        'Qualification': education,
-                        'Last Date': last_date,
-                        'Link': ''
+                        'source': 'AllGovtJobs',
+                        'title': org,
+                        'posts': posts_info,
+                        'qualification': education,
+                        'lastDate': last_date,
+                        'link': ''
                     })
             
             print(f"  Scraped page {page}/{num_pages}")
@@ -137,8 +110,6 @@ def scrape_source3():
     """Source 3: allgovernmentjobs.in - Filtered by education level"""
     print("Scraping Source 3: allgovernmentjobs.in (filtered)")
     
-    # This is similar to source 2 but with education filter
-    # For simplicity, we'll mark these with a different source name
     try:
         base_url = "https://allgovernmentjobs.in/latest-government-jobs"
         num_pages = 25
@@ -175,12 +146,12 @@ def scrape_source3():
                         posts_info = job_details.split('-')[-1].strip() if '-' in job_details else job_details
                         
                         all_data.append({
-                            'Source': 'AllGovtJobs-Filtered',
-                            'Title': org,
-                            'Posts': posts_info,
-                            'Qualification': matched_education,
-                            'Last Date': last_date,
-                            'Link': ''
+                            'source': 'AllGovtJobs-Filtered',
+                            'title': org,
+                            'posts': posts_info,
+                            'qualification': matched_education,
+                            'lastDate': last_date,
+                            'link': ''
                         })
             
             print(f"  Scraped page {page}/{num_pages}")
@@ -226,22 +197,22 @@ def scrape_source4():
                     # Only include if date is today, yesterday, or future
                     if last_date >= (datetime.now() - timedelta(days=1)).date():
                         jobs.append({
-                            'Source': 'SarkariResult',
-                            'Title': title,
-                            'Posts': num_posts,
-                            'Qualification': 'N/A',
-                            'Last Date': last_date_str,
-                            'Link': job_link
+                            'source': 'SarkariResult',
+                            'title': title,
+                            'posts': num_posts,
+                            'qualification': 'N/A',
+                            'lastDate': last_date_str,
+                            'link': job_link
                         })
                 except ValueError:
                     # If date parsing fails, still include it
                     jobs.append({
-                        'Source': 'SarkariResult',
-                        'Title': title,
-                        'Posts': num_posts,
-                        'Qualification': 'N/A',
-                        'Last Date': last_date_str,
-                        'Link': job_link
+                        'source': 'SarkariResult',
+                        'title': title,
+                        'posts': num_posts,
+                        'qualification': 'N/A',
+                        'lastDate': last_date_str,
+                        'link': job_link
                     })
             except Exception as e:
                 print(f"  Error parsing job: {e}")
@@ -253,12 +224,6 @@ def scrape_source4():
     except Exception as e:
         print(f"Error scraping Source 4: {e}")
         return []
-
-
-def scrape_source5():
-    """Source 5: PLACEHOLDER for future website"""
-    print("Source 5: Not configured yet (placeholder)")
-    return []
 
 
 def main():
@@ -274,7 +239,6 @@ def main():
     all_jobs.extend(scrape_source2())
     all_jobs.extend(scrape_source3())
     all_jobs.extend(scrape_source4())
-    all_jobs.extend(scrape_source5())
     
     print(f"\nTotal jobs scraped: {len(all_jobs)}")
     
@@ -282,33 +246,28 @@ def main():
         print("No jobs found. Exiting.")
         return
     
-    # Convert to DataFrame
-    df = pd.DataFrame(all_jobs)
+    # Add scrape timestamp to each job
+    scraped_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    for job in all_jobs:
+        job['scrapedAt'] = scraped_at
     
-    # Add scrape timestamp
-    df['Scraped At'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    # Create output data structure
+    output = {
+        'lastUpdated': scraped_at,
+        'totalJobs': len(all_jobs),
+        'jobs': all_jobs
+    }
     
-    # Reorder columns
-    df = df[['Source', 'Title', 'Posts', 'Qualification', 'Last Date', 'Link', 'Scraped At']]
-    
-    print("\nWriting to Google Sheets...")
+    # Save to JSON file
+    print("\nWriting to jobs.json...")
     try:
-        sheet = get_google_sheet()
-        worksheet = sheet.worksheet('Jobs')  # Make sure this sheet exists
+        with open('jobs.json', 'w', encoding='utf-8') as f:
+            json.dump(output, f, indent=2, ensure_ascii=False)
         
-        # Clear existing data
-        worksheet.clear()
-        
-        # Write headers and data
-        worksheet.update([df.columns.values.tolist()] + df.values.tolist())
-        
-        print("✅ Successfully updated Google Sheet!")
+        print("✅ Successfully saved to jobs.json!")
         
     except Exception as e:
-        print(f"❌ Error updating Google Sheet: {e}")
-        # Save to local CSV as backup
-        df.to_csv('jobs_backup.csv', index=False)
-        print("💾 Saved backup to jobs_backup.csv")
+        print(f"❌ Error saving JSON: {e}")
 
 
 if __name__ == "__main__":
