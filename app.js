@@ -1,5 +1,5 @@
 // Configuration - REPLACE WITH YOUR ACTUAL GOOGLE SHEET ID
-const GOOGLE_SHEET_ID = 'YOUR_GOOGLE_SHEET_ID_HERE';
+const GOOGLE_SHEET_ID = '1F9YWvXyWMAhTtlqp4hnu87dz1V2-ehQKJz-rCuYjjfg';
 const SHEET_NAME = 'Jobs';
 
 // Google Sheets JSON feed URL
