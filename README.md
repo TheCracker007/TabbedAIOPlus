@@ -18,25 +18,6 @@ A simple, automated government jobs aggregator that scrapes multiple sources and
 3. **AllGovtJobs-Filtered** - allgovernmentjobs.in (filtered by education)
 4. **SarkariResult** - sarkariresult.app
 
-## Setup
-
-### 1. Fork this repository
-
-### 2. Enable GitHub Actions
-- Go to **Settings** → **Actions** → **General**
-- Enable "Read and write permissions"
-
-### 3. Enable GitHub Pages
-- Go to **Settings** → **Pages**
-- Source: **Deploy from a branch**
-- Branch: **main** / **root**
-- Save
-
-### 4. Manual Trigger (Optional)
-- Go to **Actions** tab
-- Select **Scrape Government Jobs**
-- Click **Run workflow**
-
 ## How It Works
 
 1. **GitHub Actions** runs `scraper.py` every 6 hours
@@ -46,16 +27,6 @@ A simple, automated government jobs aggregator that scrapes multiple sources and
 5. **GitHub Pages** serves the static HTML
 6. Users see live data in their browser
 
-## Local Development
-```bash
-# Install dependencies
-pip install -r requirements.txt
-
-# Run scraper
-python scraper.py
-
-# Open index.html in browser
-```
 
 ## File Structure
 ```
